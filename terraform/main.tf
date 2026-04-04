@@ -69,14 +69,7 @@ resource "aws_security_group" "heart_disease_sg" {
     cidr_blocks = [var.my_ip_cidr]
   }
 
-  # FastAPI
-  ingress {
-    description = "FastAPI prediction API"
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = [var.my_ip_cidr]
-  }
+
 
   # Allow all outbound
   egress {
@@ -171,15 +164,8 @@ resource "aws_instance" "heart_disease_ec2" {
       .venv/bin/python3 pipeline/data_pipeline.py --serve \
       > /opt/API-Assignment-Group14/dataops.log 2>&1 &
 
-    # 4. Start MLflow UI persistently
-    nohup .venv/bin/mlflow ui \
-      --host 0.0.0.0 --port 5000 \
-      > /opt/API-Assignment-Group14/mlflow.log 2>&1 &
-
-    # 5. Start FastAPI persistently
-    nohup .venv/bin/python3 -m uvicorn api.app:app \
-      --host 0.0.0.0 --port 8000 \
-      > /opt/API-Assignment-Group14/api.log 2>&1 &
+    # 4. Wait for Prefect deployment to register (3-minute first run happens after 180 seconds)
+    sleep 180
 
     echo "Bootstrap complete" >> /var/log/user-data.log
   EOF

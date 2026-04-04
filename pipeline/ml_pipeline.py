@@ -1,59 +1,103 @@
-import pandas as pd
+"""Train, evaluate, log, and persist heart disease classification models."""
+
+import json
+import pickle
+from pathlib import Path
+
 import mlflow
 import mlflow.sklearn
-from sklearn.model_selection import train_test_split
+import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-import pickle
-import os
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-# Load data
-data_path = os.path.join(os.path.dirname(__file__), "../data/heart.csv")
-df = pd.read_csv(data_path)
 
-# Preprocessing
-df = pd.get_dummies(df, drop_first=True)
+def build_pipeline(model):
+    """Create an end-to-end preprocessing and modeling pipeline."""
+    numeric_features = ["Age", "RestingBP", "Cholesterol", "FastingBS", "MaxHR", "Oldpeak"]
+    categorical_features = ["Sex", "ChestPainType", "RestingECG", "ExerciseAngina", "ST_Slope"]
 
-X = df.drop("HeartDisease", axis=1)
-y = df["HeartDisease"]
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_features),
+            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+        ]
+    )
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
+    return Pipeline(steps=[("preprocessor", preprocessor), ("model", model)])
 
-models = {
-    "logistic_regression": LogisticRegression(max_iter=1000),
-    "random_forest": RandomForestClassifier()
-}
 
-best_model = None
-best_score = 0
+def train_and_evaluate():
+    """Train two candidate models, log metrics, and save the best performer."""
+    project_root = Path(__file__).resolve().parents[1]
+    data_path = project_root / "data" / "heart.csv"
+    df = pd.read_csv(data_path)
 
-for name, model in models.items():
-    with mlflow.start_run(run_name=name):
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+    X = df.drop("HeartDisease", axis=1)
+    y = df["HeartDisease"]
 
-        acc = accuracy_score(y_test, y_pred)
-        prec = precision_score(y_test, y_pred)
-        rec = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
 
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("precision", prec)
-        mlflow.log_metric("recall", rec)
-        mlflow.log_metric("f1_score", f1)
+    candidates = {
+        "logistic_regression": LogisticRegression(max_iter=1000, random_state=42),
+        "random_forest": RandomForestClassifier(n_estimators=300, random_state=42),
+    }
 
-        mlflow.sklearn.log_model(model, "model")
+    best_name = None
+    best_model = None
+    best_accuracy = -1.0
+    all_metrics = {}
 
-        if acc > best_score:
-            best_score = acc
-            best_model = model
+    mlflow.set_experiment("heart_disease_prediction")
 
-# Save best model
-model_path = os.path.join(os.path.dirname(__file__), "../models/model.pkl")
-with open(model_path, "wb") as f:
-    pickle.dump(best_model, f)
+    for name, estimator in candidates.items():
+        pipeline = build_pipeline(estimator)
+        with mlflow.start_run(run_name=name):
+            pipeline.fit(X_train, y_train)
+            y_pred = pipeline.predict(X_test)
 
-print("Best model saved!")
+            metrics = {
+                "accuracy": accuracy_score(y_test, y_pred),
+                "precision": precision_score(y_test, y_pred),
+                "recall": recall_score(y_test, y_pred),
+                "f1_score": f1_score(y_test, y_pred),
+            }
+
+            mlflow.log_metrics(metrics)
+            mlflow.sklearn.log_model(pipeline, name="model")
+            all_metrics[name] = metrics
+
+            if metrics["accuracy"] > best_accuracy:
+                best_accuracy = metrics["accuracy"]
+                best_name = name
+                best_model = pipeline
+
+    models_path = project_root / "models"
+    models_path.mkdir(exist_ok=True)
+
+    model_path = models_path / "model.pkl"
+    with open(model_path, "wb") as fp:
+        pickle.dump(best_model, fp)
+
+    report = {
+        "best_model": best_name,
+        "split": {"train": 0.7, "test": 0.3},
+        "metrics": all_metrics,
+    }
+    report_path = models_path / "metrics_report.json"
+    with open(report_path, "w", encoding="utf-8") as fp:
+        json.dump(report, fp, indent=2)
+
+    print(f"Best model: {best_name}")
+    print(f"Saved model to: {model_path}")
+    print(f"Saved metrics report to: {report_path}")
+
+
+if __name__ == "__main__":
+    train_and_evaluate()

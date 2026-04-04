@@ -26,7 +26,6 @@ The EC2 user data script runs on first boot and:
 | Prefect server (dashboard) | `4200` | `/opt/API-Assignment-Group14/prefect.log` |
 | 3-minute scheduled data pipeline | — | `/opt/API-Assignment-Group14/dataops.log` |
 | MLflow UI | `5000` | `/opt/API-Assignment-Group14/mlflow.log` |
-| FastAPI prediction API | `8000` | `/opt/API-Assignment-Group14/api.log` |
 
 All services survive SSH disconnects. The dashboards are accessible via the public IP immediately after bootstrap completes (allow ~5 minutes after `terraform apply`).
 
@@ -60,7 +59,7 @@ All tuneable values live in `variables.tf`. The most important ones to set befor
 | Variable | Default | What to change |
 |---|---|---|
 | `aws_region` | `us-east-1` | Change if you want to deploy in a different region |
-| `instance_type` | `t2.micro` | Use `t3.small` or larger if the model training is slow |
+| `instance_type` | `t2.micro` | Use `t3.small` or larger if processing is slow |
 | `key_name` | `my-key` | **Must match** an existing key pair name in your AWS account |
 | `my_ip_cidr` | `0.0.0.0/0` | Replace with your IP (e.g. `203.0.113.10/32`) to restrict dashboard access |
 | `repo_url` | GitHub URL | Update if you forked the repo |
@@ -142,7 +141,6 @@ Use the URLs from `terraform output`:
 
 - **Prefect dashboard**: `http://<PUBLIC_IP>:4200`
 - **MLflow UI**: `http://<PUBLIC_IP>:5000`
-- **FastAPI docs**: `http://<PUBLIC_IP>:8000/docs`
 
 Wait at least one 3-minute cycle for the scheduled data pipeline to appear in the Prefect dashboard.
 
@@ -156,11 +154,9 @@ PREFECT_API_URL=http://127.0.0.1:4200/api python3 api_details.py
 
 ### Step 9 — check service logs at any time
 ```bash
-cd /opt/API-Assignment-Group14
 tail -f prefect.log    # Prefect server
 tail -f dataops.log    # 3-minute pipeline runs
 tail -f mlflow.log     # MLflow UI
-tail -f api.log        # FastAPI
 ```
 
 ## Destroy all resources when done
@@ -193,7 +189,6 @@ nohup prefect server start --host 0.0.0.0 --port 4200 > prefect.log 2>&1 &
 sleep 20
 nohup env PREFECT_API_URL=http://127.0.0.1:4200/api python3 pipeline/data_pipeline.py --serve > dataops.log 2>&1 &
 nohup mlflow ui --host 0.0.0.0 --port 5000 > mlflow.log 2>&1 &
-nohup python3 -m uvicorn api.app:app --host 0.0.0.0 --port 8000 > api.log 2>&1 &
 ```
 
 ### Security group is blocking access
@@ -202,4 +197,3 @@ If you set `my_ip_cidr` to your IP and your IP changed, update `terraform.tfvars
 terraform apply
 ```
 Terraform will update only the security group rule without recreating the instance.
-

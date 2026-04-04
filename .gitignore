@@ -144,15 +144,25 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-# Terraform
-.terraform/
-terraform.tfstate
-terraform.tfstate.backup
-*.tfvars
 
-# Project specific
+# Terraform state and local cache (do not commit)
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+terraform/.terraform.lock.hcl
+
+# Project specific — generated artifacts (keep .gitkeep placeholders)
 mlruns/
 mlflow.db
-models/*.pkl  # Ignore model files but keep .gitkeep
-deployment/*.png  # Ignore generated images but keep .gitkeep
 *.log
+
+# Trained model files
+models/*.pkl
+models/*.json
+
+# Generated data pipeline outputs
+deployment/*.png
+deployment/*.csv
+deployment/*.json
+

@@ -18,15 +18,6 @@ output "mlflow_ui_url" {
   value       = "http://${aws_instance.heart_disease_ec2.public_ip}:5000"
 }
 
-output "fastapi_url" {
-  description = "FastAPI prediction service"
-  value       = "http://${aws_instance.heart_disease_ec2.public_ip}:8000"
-}
-
-output "fastapi_docs_url" {
-  description = "FastAPI interactive Swagger docs"
-  value       = "http://${aws_instance.heart_disease_ec2.public_ip}:8000/docs"
-}
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
