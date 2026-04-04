@@ -76,31 +76,29 @@ resource "aws_instance" "heart_disease_ec2" {
   user_data = <<-EOF
     #!/bin/bash
     apt update
-    apt install -y python3.11 python3.11-venv python3.11-dev python3.11-pip python3.11-distutils git curl
+    apt install -y python3 python3-venv python3-dev python3-pip python3-distutils git curl
 
     # Clone repo (replace with your repo URL)
-    git clone https://github.com/adityarj-pazuzu/API-Assignment-Group14.git /home/admin/API-Assignment-1
-    cd /home/admin/API-Assignment-1
+    git clone https://github.com/adityarj-pazuzu/API-Assignment-Group14.git /home/ubuntu/API-Assignment-Group14
+    cd /home/ubuntu/API-Assignment-Group14
 
     # Create venv with Python 3.11
-    python3.11 -m venv .venv
+    python3 -m venv .venv
     source .venv/bin/activate
 
     # Install requirements
-    pip install --upgrade pip setuptools wheel
-    pip install -r requirements.txt
+    python3 -m pip install --upgrade pip setuptools wheel
+    python3 -m pip install -r requirements.txt
 
     # Run pipelines
-    python3.11 pipeline/data_pipeline.py
-    python3.11 pipeline/ml_pipeline.py
+    python3 pipeline/data_pipeline.py
+    python3 pipeline/ml_pipeline.py
 
     # Start services in background
     nohup mlflow ui --host 0.0.0.0 --port 5000 &
     nohup prefect server start --host 0.0.0.0 --port 4200 &
     nohup uvicorn api.app:app --host 0.0.0.0 --port 8000 &
 
-    # Schedule data pipeline every 3 minutes
-    echo "*/3 * * * * /home/admin/API-Assignment-1/.venv/bin/python3.11 /home/admin/API-Assignment-1/pipeline/data_pipeline.py" | crontab -
   EOF
 
   tags = {
