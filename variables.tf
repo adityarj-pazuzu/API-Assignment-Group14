@@ -5,9 +5,9 @@ variable "aws_region" {
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2 instance (Amazon Linux 2)"
+  description = "AMI ID for EC2 instance (Debian 12)"
   type        = string
-  default     = "ami-0c02fb55956c7d316"  # Update to latest Amazon Linux 2 AMI
+  default     = "ami-0c7217cdde317cfec"  # Debian 12 for us-east-1, update for other regions
 }
 
 variable "instance_type" {
@@ -19,7 +19,7 @@ variable "instance_type" {
 variable "key_name" {
   description = "SSH key pair name"
   type        = string
-  default     = "your-key-pair"  # Replace with your key pair
+  default     = "my-key"  # Replace with your actual AWS key pair name
 }
 
 variable "s3_bucket_name" {

@@ -113,12 +113,12 @@ uvicorn api.app:app --reload
 
 ### Option 1: Manual Deployment
 1. Go to AWS EC2 Console > Launch Instance.
-2. Choose Amazon Linux 2 or Ubuntu AMI.
+2. Choose **Debian 12** AMI.
 3. Select t2.micro (free tier) or larger.
 4. Configure security group: Allow SSH (22), HTTP (80), HTTPS (443), Custom TCP (4200 for Prefect, 5000 for MLflow, 8000 for FastAPI).
-5. Launch and connect via SSH: `ssh -i your-key.pem ec2-user@public-ip`
-6. Install dependencies: `sudo yum update -y; sudo yum install -y python3.11 python3.11-pip git`
-7. Clone repo, create venv, install reqs, run pipelines, start services, set up cron as in the manual steps above.
+5. Launch and connect via SSH: `ssh -i your-key.pem admin@public-ip` (Note: Debian uses `admin` user, not `ec2-user`)
+6. Install dependencies: `sudo apt update && sudo apt install -y python3.11 python3.11-venv python3.11-pip git`
+7. Clone repo, create venv, install reqs, run pipelines, start services, set up cron as below.
 
 ### Option 2: Terraform Deployment (Automated)
 Use Terraform to provision AWS resources automatically.
@@ -172,6 +172,31 @@ Use Terraform to provision AWS resources automatically.
    terraform destroy
    ```
 
+#### SSH Key Setup (Optional)
+
+You have multiple options:
+
+**Option A: Import Your Local SSH Key (Easiest)**
+1. You already have an SSH key pair on your local machine (e.g., `~/.ssh/id_ed25519`).
+2. Go to AWS Console > EC2 > Key Pairs > Import Key Pair.
+3. Name it (e.g., `my-local-key`).
+4. Paste your **public key content** (e.g., from `~/.ssh/id_ed25519.pub`):
+   ```bash
+   cat ~/.ssh/id_ed25519.pub  # Copy this entire output
+   ```
+5. Import and update `variables.tf`:
+   ```terraform
+   variable "key_name" {
+     default = "my-local-key"  # The name you gave in AWS
+   }
+   ```
+6. SSH into instance: `ssh -i ~/.ssh/id_ed25519 admin@<public-ip>` (Note: Debian uses `admin` user)
+
+**Option B: Create New AWS Key Pair and Download**
+1. Go to AWS Console > EC2 > Key Pairs > Create Key Pair.
+2. Download the `.pem` file and save it locally.
+3. Update `variables.tf` with the key name.
+
 #### Resources Created
 - EC2 instance with auto-setup via user data.
 - Security group for required ports.
@@ -181,4 +206,3 @@ Use Terraform to provision AWS resources automatically.
 #### Notes
 - User data script installs dependencies, runs pipelines, starts services, and sets up cron for 3-minute scheduling.
 - Monitor costs; use free tier where possible.
-
