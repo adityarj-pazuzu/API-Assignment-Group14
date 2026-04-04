@@ -16,9 +16,16 @@ provider "aws" {
 # ---------------------------------------------------------------------------
 # Data source: latest Ubuntu 22.04 LTS AMI published by Canonical
 # ---------------------------------------------------------------------------
-data "aws_ssm_parameter" "ubuntu_ami" {
-  name = "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+  }
 }
+
 
 # ---------------------------------------------------------------------------
 # Networking: use the default VPC and its first available subnet
@@ -121,7 +128,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 # service persistently with nohup so the dashboards survive SSH disconnects.
 # ---------------------------------------------------------------------------
 resource "aws_instance" "heart_disease_ec2" {
-  ami                         = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   key_name                    = var.key_name
   subnet_id                   = tolist(data.aws_subnets.default.ids)[0]
@@ -139,8 +146,9 @@ resource "aws_instance" "heart_disease_ec2" {
     apt-get install -y python3 python3-venv python3-pip git
 
     # Clone the repository
-    git clone ${var.repo_url} /opt/API-Assignment-Group14
-    cd /opt/API-Assignment-Group14
+    git clone ${var.repo_url} /home/ubuntu/API-Assignment-Group14
+    chown -R ubuntu:ubuntu /home/ubuntu/API-Assignment-Group14
+    cd /home/ubuntu/API-Assignment-Group14
 
     # Python virtual environment
     python3 -m venv .venv
@@ -154,7 +162,7 @@ resource "aws_instance" "heart_disease_ec2" {
     # 1. Start Prefect server persistently
     nohup .venv/bin/prefect server start \
       --host 0.0.0.0 --port 4200 \
-      > /opt/API-Assignment-Group14/prefect.log 2>&1 &
+      > /home/ubuntu/API-Assignment-Group14/prefect.log 2>&1 &
 
     # 2. Wait for Prefect to finish starting
     sleep 20
@@ -162,7 +170,7 @@ resource "aws_instance" "heart_disease_ec2" {
     # 3. Register and serve the 3-minute scheduled data pipeline
     nohup env PREFECT_API_URL=http://127.0.0.1:4200/api \
       .venv/bin/python3 pipeline/data_pipeline.py --serve \
-      > /opt/API-Assignment-Group14/dataops.log 2>&1 &
+      > /home/ubuntu/API-Assignment-Group14/dataops.log 2>&1 &
 
     # 4. Wait for Prefect deployment to register (3-minute first run happens after 180 seconds)
     sleep 180
@@ -175,4 +183,3 @@ resource "aws_instance" "heart_disease_ec2" {
     Project = "Heart-Disease-Pipeline"
   }
 }
-
