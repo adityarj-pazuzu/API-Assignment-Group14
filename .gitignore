@@ -153,9 +153,6 @@ terraform.tfstate.backup
 # Project specific
 mlruns/
 mlflow.db
-models/*.pkl  # Uncomment if you don't want to commit models
-deployment/*.png  # Generated visualizations
+models/*
+deployment/*  # Generated visualizations
 *.log
-
-# Data (if large, uncomment)
-# data/
