@@ -153,4 +153,6 @@ terraform.tfstate.backup
 # Project specific
 mlruns/
 mlflow.db
+models/*.pkl  # Ignore model files but keep .gitkeep
+deployment/*.png  # Ignore generated images but keep .gitkeep
 *.log
