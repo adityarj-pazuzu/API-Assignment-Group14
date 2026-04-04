@@ -61,7 +61,7 @@ python pipeline/ml_pipeline.py
 - **Console Logs**: Printed during pipeline runs.
 - **Visualizations**: Open PNG files in `deployment/`.
 - **MLflow UI**: `mlflow ui` → http://127.0.0.1:5000 (view metrics and models).
-- **Prefect Dashboard**: `prefect orion start` → http://127.0.0.1:4200 (view pipeline runs and logs).
+- **Prefect Dashboard**: `prefect server start` → http://127.0.0.1:4200 (view pipeline runs and logs).
 - **API Details**: `python api_details.py` (retrieves flow/deployment info via Prefect APIs).
 
 ### 4. Prediction API
@@ -131,7 +131,7 @@ Use Terraform to provision AWS resources automatically.
 #### Steps
 1. **Clone/Update Repo**:
    ```bash
-   cd API-Assignment-1
+   cd API-Assignment-Group14
    ```
 
 2. **Update Variables**:
@@ -181,4 +181,4 @@ Use Terraform to provision AWS resources automatically.
 #### Notes
 - User data script installs dependencies, runs pipelines, starts services, and sets up cron for 3-minute scheduling.
 - Monitor costs; use free tier where possible.
-- For production, add VPC, subnets, etc., in Terraform.
+

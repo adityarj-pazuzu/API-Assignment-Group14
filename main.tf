@@ -79,7 +79,7 @@ resource "aws_instance" "heart_disease_ec2" {
     yum install -y python3.11 python3.11-pip git
 
     # Clone repo (replace with your repo URL)
-    git clone https://github.com/your-username/API-Assignment-1.git /home/ec2-user/API-Assignment-1
+    git clone https://github.com/adityarj-pazuzu/API-Assignment-Group14.git /home/ec2-user/API-Assignment-Group14
     cd /home/ec2-user/API-Assignment-1
 
     # Create venv
@@ -95,7 +95,7 @@ resource "aws_instance" "heart_disease_ec2" {
 
     # Start services in background
     nohup mlflow ui --host 0.0.0.0 --port 5000 &
-    nohup prefect orion start --host 0.0.0.0 --port 4200 &
+    nohup prefect server start --host 0.0.0.0 --port 4200 &
     nohup uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload &
 
     # Schedule data pipeline every 3 minutes
