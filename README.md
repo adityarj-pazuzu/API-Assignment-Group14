@@ -163,227 +163,74 @@ The script displays at least two application details such as:
 | Local MLflow UI | `http://127.0.0.1:5000` |
 
 ## Cloud Execution Guide
-To satisfy the assignment's cloud requirement, run the application on an **AWS EC2 instance**.
 
-Two approaches are documented:
+To run the application on a cloud or on-premises Linux machine:
 
-| Approach | When to use |
-|---|---|
-| **Terraform (automated)** — [`terraform/README.md`](terraform/README.md) | Recommended. One `terraform apply` command provisions the EC2 instance, security group, IAM role, and starts all services automatically. |
-| **AWS CLI (manual)** — steps below | Use if you prefer to provision infrastructure step-by-step from the command line without Terraform. |
+**[→ See Rocky Linux Deployment Guide](ROCKY_LINUX_DEPLOYMENT.md)** — Complete step-by-step instructions for Rocky Linux, CentOS, or any RHEL-based system with automated and manual deployment options.
 
-For the automated path, go to [`terraform/README.md`](terraform/README.md) first.
+### Cloud Architecture
 
-Below is the concrete **manual AWS CLI** workflow.
+The application runs on a single Linux VM with three persistent services:
 
-### Cloud architecture used for the assignment
-- one Linux VM instance
-- Prefect server for orchestration and dashboard
-- scheduled Prefect-served data pipeline every 3 minutes
-- MLflow UI for model monitoring
+- **Prefect Server** (port 4200) — Orchestration engine and dashboard for monitoring
+- **Data Pipeline Service** — Scheduled every 3 minutes via Prefect
+- **MLflow UI** (port 5000) — Model metrics tracking and visualization
 
-### Recommended EC2 setup
-- OS: Ubuntu 22.04 LTS or Debian 12
-- Instance type: `t2.micro` or larger
-- Open inbound ports:
-  - `22` for SSH
-  - `4200` for Prefect dashboard
-  - `5000` for MLflow UI
+### Quick Cloud Deployment
 
-### AWS CLI commands to bring up the required infrastructure
-If you want to provision the minimum infrastructure from the command line instead of the AWS Console, the following AWS CLI workflow creates:
-
-- one EC2 instance
-- one security group
-- inbound access for SSH, Prefect, and MLflow
-
-Before running these commands, make sure the AWS CLI is installed and configured:
+For automated setup on Rocky Linux:
 
 ```bash
-aws configure
+sudo bash setup_rocky_linux.sh
 ```
 
-Also make sure you already have an EC2 key pair in your AWS account. Use its name in `KEY_NAME` and keep the matching `.pem` file locally for SSH.
+This handles all installation, configuration, and service startup automatically (~10-15 minutes total).
 
-Set the variables for your account and network. Replace the placeholder values with your own:
+For step-by-step manual deployment, see [ROCKY_LINUX_DEPLOYMENT.md](ROCKY_LINUX_DEPLOYMENT.md).
 
-```bash
-export AWS_REGION="us-east-1"
-export VPC_ID="vpc-xxxxxxxx"
-export SUBNET_ID="subnet-xxxxxxxx"
-export KEY_NAME="your-keypair-name"
-export MY_IP_CIDR="203.0.113.10/32"
-export AMI_ID=$(aws ssm get-parameter \
-  --region "$AWS_REGION" \
-  --name "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id" \
-  --query 'Parameter.Value' \
-  --output text)
-```
+### Access Cloud Dashboards
 
-Create a security group:
+After deployment completes:
+
+- **Prefect Dashboard:** http://<instance-ip>:4200
+- **MLflow UI:** http://<instance-ip>:5000
+
+### Verify Cloud Deployment
 
 ```bash
-export SG_ID=$(aws ec2 create-security-group \
-  --region "$AWS_REGION" \
-  --group-name "heart-disease-ml-sg" \
-  --description "Security group for heart disease ML assignment" \
-  --vpc-id "$VPC_ID" \
-  --query 'GroupId' \
-  --output text)
-```
+# SSH into your cloud instance
+ssh user@instance-ip
 
-Allow inbound traffic. The example below restricts access to your current public IP range for safer demos:
+# Verify services are running
+sudo systemctl status prefect-server.service data-pipeline.service mlflow-ui.service
 
-```bash
-aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" --protocol tcp --port 22 --cidr "$MY_IP_CIDR"
-aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" --protocol tcp --port 4200 --cidr "$MY_IP_CIDR"
-aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" --protocol tcp --port 5000 --cidr "$MY_IP_CIDR"
-```
-
-Launch the EC2 instance:
-
-```bash
-export INSTANCE_ID=$(aws ec2 run-instances \
-  --region "$AWS_REGION" \
-  --image-id "$AMI_ID" \
-  --instance-type t2.micro \
-  --key-name "$KEY_NAME" \
-  --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=$SUBNET_ID,Groups=$SG_ID" \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=Heart-Disease-Pipeline}]' \
-  --query 'Instances[0].InstanceId' \
-  --output text)
-```
-
-Wait for the instance to become available and fetch its public IP:
-
-```bash
-aws ec2 wait instance-running --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
-aws ec2 wait instance-status-ok --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
-export PUBLIC_IP=$(aws ec2 describe-instances \
-  --region "$AWS_REGION" \
-  --instance-ids "$INSTANCE_ID" \
-  --query 'Reservations[0].Instances[0].PublicIpAddress' \
-  --output text)
-echo "$PUBLIC_IP"
-```
-
-Connect to the server:
-
-```bash
-ssh -i /path/to/your-key.pem ubuntu@"$PUBLIC_IP"
-```
-
-If your AMI uses a different default SSH user, adjust the username accordingly. After login, continue with the application setup commands in the next section.
-
-### Optional cleanup commands
-When you are done with the demo, you can remove the instance and security group:
-
-```bash
-aws ec2 terminate-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
-aws ec2 wait instance-terminated --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
-aws ec2 delete-security-group --region "$AWS_REGION" --group-id "$SG_ID"
-```
-
-### Cloud deployment steps
-SSH into the VM and run the install and training steps first:
-
-```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip git
-git clone <your-repository-url>
-cd API-Assignment-Group14
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-python3 pipeline/ml_pipeline.py
-```
-
-> **Important — keep dashboards alive for screenshots:** do **not** start Prefect server in the foreground and then try to open a second terminal for the pipeline. If your SSH session closes, all foreground processes die and every dashboard disappears. Use `nohup` so all services stay alive after you disconnect.
-
-Start all services persistently in the background with a single block:
-
-```bash
-cd API-Assignment-Group14
-source .venv/bin/activate
-
-# 1. Start Prefect server — dashboard available at port 4200
-nohup prefect server start --host 0.0.0.0 --port 4200 > prefect.log 2>&1 &
-
-# 2. Wait 20 seconds for the server to finish starting before registering the deployment
-sleep 20
-
-# 3. Register and serve the 3-minute scheduled data pipeline
-nohup env PREFECT_API_URL=http://127.0.0.1:4200/api \
-  python3 pipeline/data_pipeline.py --serve > dataops.log 2>&1 &
-
-# 4. Start MLflow UI — dashboard available at port 5000
-nohup mlflow ui --host 0.0.0.0 --port 5000 > mlflow.log 2>&1 &
-
-echo "All services started."
-sleep 5
-ss -tlnp | grep -E '4200|5000'
-```
-
-You can now safely close the SSH session. All services remain running and the dashboards stay accessible at their public URLs for screenshots.
-
-Print Prefect application details while still SSH'd in:
-
-```bash
+# Retrieve application details via Prefect APIs
+cd /opt/heart-disease-ml
+source venv/bin/activate
 PREFECT_API_URL=http://127.0.0.1:4200/api python3 api_details.py
 ```
 
-Check on any service log at any time:
+### Monitor Cloud Pipelines
 
 ```bash
-tail -f prefect.log    # Prefect server — shows startup and heartbeat output
-tail -f dataops.log    # Scheduled pipeline run history — new entry every 3 minutes
-tail -f mlflow.log     # MLflow UI server output
+# View live Prefect server logs
+sudo journalctl -u prefect-server.service -f
+
+# View scheduled pipeline execution
+sudo journalctl -u data-pipeline.service -f
+
+# View MLflow server logs
+sudo journalctl -u mlflow-ui.service -f
 ```
 
-If a service stops and needs restarting:
+### Cloud Artifacts
 
-```bash
-cd API-Assignment-Group14
-source .venv/bin/activate
-# Restart any stopped service — example for Prefect
-nohup prefect server start --host 0.0.0.0 --port 4200 > prefect.log 2>&1 &
-```
+After deployment, you will see:
 
-### What to show on the cloud dashboard for the assignment
-To demonstrate the assignment objectives on cloud, show the following:
-- Prefect dashboard with the `heart-dataops-3min` deployment
-- recent flow runs and logs every 3 minutes
-- MLflow UI with the logged evaluation metrics for both models
-- `api_details.py` output showing flow and deployment metadata
-
-Where to find these on the cloud VM after startup:
-- Prefect dashboard: `http://<PUBLIC_IP>:4200`
-- MLflow UI: `http://<PUBLIC_IP>:5000`
-- generated data artifacts: inside the cloned repo under `deployment/`
-- generated model artifacts: inside the cloned repo under `models/`
-
-## Airflow vs Prefect — Dashboard Availability on AWS
-
-### Short answer
-Neither Prefect nor Apache Airflow provides a dashboard that is automatically hosted and managed by AWS out of the box. Both require you to run the web server process yourself on the VM, exactly as this project does with `nohup prefect server start`.
-
-The only way to get a fully managed dashboard directly from AWS is to use **Amazon MWAA (Managed Workflows for Apache Airflow)**, which is a paid managed service.
-
-### Detailed comparison
-
-| Feature | Prefect (current project) | Airflow self-hosted on EC2 | AWS MWAA (managed Airflow) |
-|---|---|---|---|
-| Dashboard availability | You run the server on EC2 with `nohup` — accessible at `http://<EC2_IP>:4200` | You run `airflow webserver` on EC2 with `nohup` — accessible at `http://<EC2_IP>:8080` | AWS provides the URL automatically from the Console |
-| Stays alive after SSH disconnect | Yes, with `nohup` as documented above | Yes, with `nohup` | Always on — managed by AWS |
-| Cost | EC2 instance cost only (`t2.micro` is free tier eligible) | EC2 instance cost only | Approximately $350/month minimum for `mw1.small` |
-| Setup effort | Low — already working in this project | Medium — requires rewriting all pipelines as Airflow DAGs | Medium-high — requires DAGs plus S3 bucket for DAG storage and MWAA environment setup |
-| Code changes needed from current project | None | Full rewrite of `data_pipeline.py` and `ml_pipeline.py` as Airflow DAGs | Full rewrite plus S3 upload of DAGs |
-| 3-minute schedule support | Built-in via `data_pipeline.serve(interval=180)` | Yes, via `schedule_interval` in a DAG | Yes, via DAG schedule |
-| Dashboard visible in browser from laptop | Yes, via public IP and security group port | Yes, via public IP and security group port | Yes, via the MWAA Console URL |
-
-### Recommendation for this assignment
-**Keep Prefect.** It is already working, the 3-minute scheduling is registered and running, and the dashboard is accessible at the EC2 public IP once the server is started with `nohup` as documented in the Cloud Deployment Steps above. Switching to Airflow would require rewriting all pipeline code and provides no grading advantage.
+- **Prefect Dashboard** showing the `heart-dataops-3min` deployment with 3-minute runs
+- **MLflow Dashboard** showing both trained models and their metrics
+- **Generated data artifacts** in `/opt/heart-disease-ml/deployment/`
+- **Generated model artifacts** in `/opt/heart-disease-ml/models/`
 
 ## How the Project Satisfies Each Assignment Objective
 

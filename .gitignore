@@ -145,12 +145,6 @@ ehthumbs.db
 Thumbs.db
 
 
-# Terraform state and local cache (do not commit)
-terraform/.terraform/
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
-terraform/*.tfvars
-terraform/.terraform.lock.hcl
 
 # Project specific — generated artifacts (keep .gitkeep placeholders)
 mlruns/
