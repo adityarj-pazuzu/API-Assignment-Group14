@@ -14,10 +14,13 @@ This project is a cloud-ready data science and machine learning application for 
 ## How the Entire Project Works
 At a high level, the project runs in four stages:
 
-1. **Data ingestion and preprocessing**: `pipeline/data_pipeline.py` loads `data/heart.csv`, checks missing values, imputes numeric features, encodes categorical data, normalizes numeric features, and records summary statistics.
-2. **EDA and reporting**: the same data pipeline computes correlations, age binning, categorical cross-tabs, feature importance, and saves charts plus a structured JSON report into `deployment/`.
-3. **Model training and monitoring**: `pipeline/ml_pipeline.py` trains Logistic Regression and Random Forest models, evaluates them on a 70/30 split, logs metrics to MLflow, and saves the best model into `models/`.
-4. **Serving and application access**: `api_details.py` uses Prefect APIs to display flow and deployment information for DataOps evidence.
+1. **Data ingestion and preprocessing**: `pipeline/data_pipeline.py` (powered by Pandas and Scikit-learn) loads `data/heart.csv`, checks missing values, imputes numeric features, encodes categorical data, normalizes numeric features, and records summary statistics. This stage ensures data quality and consistency by cleaning raw patient records and preparing them for machine learning. The processed dataset is exported as `deployment/heart_processed.csv` for reproducibility and audit trails.
+
+2. **EDA and reporting**: the same data pipeline (using Matplotlib and Seaborn) computes correlations, age binning, categorical cross-tabs, feature importance, and saves charts plus a structured JSON report into `deployment/`. This stage uncovers data patterns, identifies feature relationships, and generates visual insights (histograms and scatter plots) that guide feature selection. A comprehensive JSON report documents all statistics, distributions, and correlations for stakeholder review.
+
+3. **Model training and monitoring**: `pipeline/ml_pipeline.py` (powered by Scikit-learn and MLflow) trains Logistic Regression and Random Forest models, evaluates them on a 70/30 split, logs metrics to MLflow, and saves the best model into `models/`. MLflow automatically tracks hyperparameters, metrics (accuracy, precision, recall, F1), and artifacts for each experiment run, enabling comparison and reproducibility. The winning model is persisted as a serialized pickle file for deployment.
+
+4. **Serving and application access**: `api_details.py` (powered by Prefect's Python client) uses Prefect's built-in APIs to retrieve and display flow and deployment metadata such as flow counts, deployment IDs, and execution history. This stage provides DataOps visibility and governance by exposing orchestration details through a programmatic interface, allowing teams to monitor pipeline health and scheduling status without manual dashboard checks.
 
 In the cloud deployment, Prefect runs the data pipeline on a **3-minute schedule** and MLflow stores model metrics.
 
