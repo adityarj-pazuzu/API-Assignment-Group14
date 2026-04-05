@@ -48,12 +48,7 @@ API-Assignment-Group14/
 ├── pipeline/
 │   ├── data_pipeline.py
 │   └── ml_pipeline.py
-├── api_details.py
-└── terraform/
-    ├── main.tf
-    ├── variables.tf
-    ├── outputs.tf
-    └── README.md
+└── api_details.py
 ```
 
 ## Technology Stack
@@ -282,7 +277,7 @@ Observed model metrics from `models/metrics_report.json`:
 
 ## Submission Notes
 For the assignment demo, the simplest way to satisfy the cloud requirement is:
-1. deploy this repository to a cloud VM using Terraform
+1. deploy this repository to a Linux cloud VM
 2. start Prefect server
 3. serve the data pipeline every 3 minutes
 4. start MLflow UI

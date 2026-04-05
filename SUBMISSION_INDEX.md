@@ -161,7 +161,7 @@ PREFECT_API_URL=http://127.0.0.1:4200/api python3 api_details.py
 | Document | Purpose | Length |
 |---|---|---|
 | **PROJECT_REPORT.md** | Complete analysis, findings, conclusions | 695 lines |
-| README.md | Project overview, local setup, AWS manual steps | 435 lines |
+| README.md | Project overview, local setup, cloud deployment steps | 435 lines |
 | ROCKY_LINUX_DEPLOYMENT.md | Detailed step-by-step deployment guide | 444 lines |
 | setup_rocky_linux.sh | Automated deployment script | 528 lines |
 
@@ -260,7 +260,7 @@ sudo systemctl status mlflow-ui.service
 |---|---|---|
 | Data Pipeline | - | Prefect flow, 6 visualizations, EDA report |
 | ML Pipeline | - | 2 trained models, metrics, best model selected |
-| Cloud Deployment | - | systemd services, Terraform (removed), setup script |
+| Cloud Deployment | - | systemd services, setup script |
 | Documentation | - | 3 guides + project report + this index |
 
 ---
@@ -279,5 +279,3 @@ sudo systemctl status mlflow-ui.service
 **Deployment Guide:** [ROCKY_LINUX_DEPLOYMENT.md](ROCKY_LINUX_DEPLOYMENT.md)  
 **Quick Start:** `sudo bash setup_rocky_linux.sh`  
 **Status:** ✅ Complete & Ready for Evaluation
-
-

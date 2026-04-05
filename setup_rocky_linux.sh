@@ -124,12 +124,9 @@ step_install_dependencies() {
 
     # Set Python 3.11 as default
     print_info "Setting Python 3.11 as default..."
-    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 > /dev/null 2>&1
-    alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1 > /dev/null 2>&1
-    print_success "Python 3.11 set as default"
-
-    # Verify installation
-    python3 --version | grep -q "3.11" && print_success "Python 3.11 verified" || print_error "Python 3.11 not found"
+    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 100 > /dev/null 2>&1
+    alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 100 > /dev/null 2>&1
+    print_info "Current python3 version: $(python3 --version 2>&1)"
 }
 
 ##############################################################################

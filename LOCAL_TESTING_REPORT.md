@@ -121,7 +121,7 @@ Top 5 most important features (Random Forest):
 |---|---|---|
 | SUBMISSION_INDEX.md | Quick navigation for graders | ✅ Complete |
 | PROJECT_REPORT.md | Complete analysis (695 lines) | ✅ Complete |
-| README.md | Project overview, no AWS references | ✅ Complete |
+| README.md | Project overview, cloud-neutral deployment notes | ✅ Complete |
 | ROCKY_LINUX_DEPLOYMENT.md | Step-by-step deployment guide | ✅ Complete |
 | SUBMISSION_CHECKLIST.txt | Quick reference checklist | ✅ Complete |
 | setup_rocky_linux.sh | Automated deployment (528 lines) | ✅ Complete |
@@ -166,4 +166,3 @@ The system is **ready for cloud deployment** and **ready for grader evaluation**
 **Test Date:** April 5, 2026  
 **Status:** ✅ ALL TESTS PASSED  
 **Ready for Submission:** YES
-

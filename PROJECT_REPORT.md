@@ -453,7 +453,7 @@ Deployment ID: def456..., Name: heart-dataops-3min
 
 ```
 ┌─────────────────────────────────────┐
-│     Rocky Linux EC2 Instance        │
+│     Rocky Linux Cloud VM            │
 │  /opt/heart-disease-ml              │
 ├─────────────────────────────────────┤
 │ ┌──────────────────────────────────┐│
@@ -691,5 +691,3 @@ sudo journalctl -u data-pipeline.service -f
 
 **Report Generated:** April 5, 2026  
 **Project Status:** ✅ Complete & Ready for Submission
-
-
