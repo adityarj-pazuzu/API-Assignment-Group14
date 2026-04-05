@@ -119,7 +119,7 @@ step_install_dependencies() {
         openssl-devel \
         libffi-devel \
         sqlite-devel \
-        > /dev/null 2>&1
+        > /dev/null 2>&1``
     print_success "Dependencies installed"
 
     # Set Python 3.11 as default

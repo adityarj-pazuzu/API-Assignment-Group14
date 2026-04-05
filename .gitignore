@@ -155,8 +155,4 @@ mlflow.db
 models/*.pkl
 models/*.json
 
-# Generated data pipeline outputs
-deployment/*.png
-deployment/*.csv
-deployment/*.json
 
